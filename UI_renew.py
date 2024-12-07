@@ -9,9 +9,12 @@
 
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
 import import_text as im_te
 import random
+
 
 #文本接口
 textdic = im_te.read_file_to_dict('sentence.md')
@@ -19,26 +22,47 @@ textdic = im_te.read_file_to_dict('sentence.md')
 sen_num = len(textdic)
 i = random.randint(1, sen_num)
 
-#字体设置
-font1 = QFont()
-font1.setFamily('微软雅黑')
-font1.setBold(True)
-font1.setPixelSize(30)
+class Ui_MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.title = "自适应屏幕大小UI"
 
+        #获取显示器分辨率
+        self.desktop = QApplication.desktop()
+        self.screenRect = self.desktop.screenGeometry()
+        self.screenheight = self.screenRect.height()
+        self.screenwidth = self.screenRect.width()
 
-class Ui_MainWindow(object):
+        print("Screen height {}".format(self.screenheight))
+        print("Screen width {}".format(self.screenwidth))
+
+        self.height = int(self.screenheight * 0.7)
+        self.width = int(self.screenwidth * 0.7)
+
+        self.resize(self.width,self.height)
+        self.wid = QWidget(self)
+        self.setCentralWidget(self.wid)
+        self.setWindowTitle(self.title)
+        self.setupUi(MainWindow)
+
     def setupUi(self, MainWindow):
-        #窗口设置
+
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1600, 1200)
+        MainWindow.resize(self.width, self.height)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.centralwidget.setStyleSheet('background-color: #FFFFFF;')
 
 
+        #字体设置
+        font1 = QFont()
+        font1.setFamily('微软雅黑')
+        font1.setBold(True)
+        font1.setPixelSize(int(self.width*0.018))
+
         #左上角日期设置
         self.date = QtWidgets.QLabel(self.centralwidget)
-        self.date.setGeometry(QtCore.QRect(100, 100, 320, 320))
+        self.date.setGeometry(QtCore.QRect(int(self.width*0.08), int(self.height*0.08), int(self.width*0.18), int(self.width*0.18)))
         self.date.setText("Date")
         self.date.setObjectName("date")
         self.date.setAlignment(QtCore.Qt.AlignCenter)
@@ -46,14 +70,16 @@ class Ui_MainWindow(object):
 
         #左侧中间按钮
         self.change_but = QtWidgets.QPushButton(self.centralwidget)
-        self.change_but.setGeometry(QtCore.QRect(135, 500, 250, 150))
+        self.change_but.setGeometry(QtCore.QRect(int(self.width*0.1), int(self.height*0.43), int(self.width*0.14), int(self.height*0.13)))
+        self.change_but.setFont(font1)
         self.change_but.setObjectName("change_but")
         self.change_but.clicked.connect(self.change_sequence)
 
         #文本框设置
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(500, 80, 1050, 700))
+        self.label.setGeometry(QtCore.QRect(int(self.width/3), int(self.height/12), int(self.width/1.7), int(self.height/1.7)))
         self.label.setCursor(QtGui.QCursor(QtCore.Qt.OpenHandCursor))
+
 
         self.label.setFont(font1)
         self.label.setAlignment(QtCore.Qt.AlignCenter)
@@ -63,12 +89,12 @@ class Ui_MainWindow(object):
 
         #左下角收藏夹按钮
         self.star = QtWidgets.QPushButton(self.centralwidget)
-        self.star.setGeometry(QtCore.QRect(70, 750, 380, 380))
+        self.star.setGeometry(QtCore.QRect(int(self.width*0.075), int(self.height*0.6), int(self.width*0.19), int(self.width*0.19)))
         self.star.setText("")
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/star.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         self.star.setIcon(icon)
-        self.star.setIconSize(QtCore.QSize(380, 380))
+        self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
         self.star.setObjectName("star")
         self.star.setStyleSheet('border: 2px solid #CCCCCC;border-radius: 180px;padding: 5px;margin: 10px;') 
         self.star.setCheckable(True)
@@ -93,15 +119,15 @@ class Ui_MainWindow(object):
     #星星按钮的变化
     def clickStar(self):
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/star.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap("pictures/star.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         icon2 = QtGui.QIcon()
-        icon2.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/star2.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon2.addPixmap(QtGui.QPixmap("pictures/star2.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         if self.star.isChecked:
             self.star.setIcon(icon)
-            self.star.setIconSize(QtCore.QSize(380, 380))
+            self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
         else:
             self.star.setIcon(icon2)
-            self.star.setIconSize(QtCore.QSize(380, 380))
+            self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
         self.star.isChecked = not self.star.isChecked
 
     #change按钮按下后随机
@@ -112,7 +138,7 @@ class Ui_MainWindow(object):
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
-        self.change_but.setText(_translate("MainWindow", "Change"))
+        self.change_but.setText(_translate("MainWindow", "切换句子"))
         self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[i])))
 
 if __name__ == "__main__":
