@@ -14,6 +14,11 @@ SENTENCE_NUM = len(textdic)
 sen_serial_num = random.randint(1, SENTENCE_NUM)
 #读取收藏序列
 love_list = import_love.read_love_from_file('love.md')
+#love_list用于主界面遍历，通过love_list_copy进行操作
+love_list_copy = love_list.copy()
+#love_list_copy用于收藏夹界面的遍历，通过love_list_copy_copy进行操作
+love_list_copy_copy = love_list.copy()
+love_serial_num = 0
 
 
 class Ui_MainWindow(QMainWindow):
@@ -118,8 +123,10 @@ class Ui_MainWindow(QMainWindow):
         self.star.setChecked(False)
         if self.star.isChecked:
             self.star.setIcon(star1)
+            self.retranslateUi(MainWindow)
         else:
             self.star.setIcon(star2)
+            self.retranslateFavorite(MainWindow)
         self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
         self.star.setObjectName("star")
         self.star.setStyleSheet('border: 2px solid #CCCCCC;border-radius: 180px;padding: 5px;margin: 10px;') 
@@ -131,14 +138,14 @@ class Ui_MainWindow(QMainWindow):
 
         #右侧下方收藏按钮
         self.love_button = QtWidgets.QPushButton(self.centralwidget)
-        self.love_button.setGeometry(QtCore.QRect(int(self.width*0.4), int(self.height*0.7), int(self.width*0.09), int(self.width*0.09)))
+        self.love_button.setGeometry(QtCore.QRect(int(self.width*0.4), int(self.height*0.73), int(self.width*0.09), int(self.width*0.09)))
         self.love_button.setText("")
         loved_button = QtGui.QIcon()
         loved_button.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         unloved_button = QtGui.QIcon()
         unloved_button.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/unloved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
-        if sen_serial_num in love_list:
+        if sen_serial_num in love_list_copy:
             self.love_button.setIcon(loved_button)
             self.love_button.isChecked = True
         else:
@@ -164,12 +171,20 @@ class Ui_MainWindow(QMainWindow):
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
+        
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
 
-    #星星按钮的变化
+    #星星收藏夹按钮的变化
     def clickStar(self):
+        def addShadowEffect3(widget):
+            shadowEffect = QGraphicsDropShadowEffect()
+            shadowEffect.setBlurRadius(50)  # 设置模糊半径
+            shadowEffect.setColor(QtGui.QColor(0, 0, 0, 80))  # 设置阴影颜色
+            shadowEffect.setOffset(10, 10)  # 设置阴影偏移量
+            widget.setGraphicsEffect(shadowEffect)
+
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy
         self.star.isChecked = not self.star.isChecked
         star1 = QtGui.QIcon()
         star1.addPixmap(QtGui.QPixmap("pictures/star.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -178,42 +193,90 @@ class Ui_MainWindow(QMainWindow):
         if self.star.isChecked:
             self.star.setIcon(star1)
             self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
+            self.retranslateUi(MainWindow)
+            love_list_copy = love_list_copy_copy.copy()
+            love_list = love_list_copy_copy.copy()
+            print(sen_serial_num)
+            print(love_list_copy)
+            if sen_serial_num in love_list_copy:
+                self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = True
+            else:
+                self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = False
         else:
             self.star.setIcon(star2)
             self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
+            self.retranslateFavorite(MainWindow)
+            love_list_copy_copy = love_list_copy.copy()
+            love_list = love_list_copy.copy()
+            love_serial_num = 0
+            self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+            self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+            self.love_button.isChecked = True          
+        loved_botton = QtGui.QIcon()
+        loved_botton.addPixmap(QtGui.QPixmap("pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        unloved_button = QtGui.QIcon()
+        unloved_button.addPixmap(QtGui.QPixmap("pictures/unloved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        addShadowEffect3(self.love_button)
 
 
     #收藏按钮的变化并修改收藏序列
     def clickLove(self):
-        global sen_serial_num
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy
         self.love_button.isChecked = not self.love_button.isChecked
         loved_botton = QtGui.QIcon()
         loved_botton.addPixmap(QtGui.QPixmap("pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         unloved_button = QtGui.QIcon()
         unloved_button.addPixmap(QtGui.QPixmap("pictures/unloved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        if self.love_button.isChecked:
-            self.love_button.setIcon(loved_botton)
-            self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-            love_list.append(sen_serial_num)
+        if self.star.isChecked:
+            if self.love_button.isChecked:
+                self.love_button.setIcon(loved_botton)
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                love_list_copy.append(sen_serial_num)
+            else:
+                self.love_button.setIcon(unloved_button)
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                love_list_copy.remove(sen_serial_num)
         else:
-            self.love_button.setIcon(unloved_button)
-            self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-            love_list.remove(sen_serial_num)
-
+            if self.love_button.isChecked:
+                self.love_button.setIcon(loved_botton)
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                love_list_copy_copy.append(love_list_copy[love_serial_num])
+            else:
+                self.love_button.setIcon(unloved_button)
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                love_list_copy_copy.remove(love_list_copy[love_serial_num])
 
     #change按钮按下后随机
     def change_sequence(self):
-        global sen_serial_num
+        global sen_serial_num, love_list, love_serial_num, love_list_copy
         sen_serial_num = random.randint(1, SENTENCE_NUM)
-        self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sen_serial_num]))
-        if sen_serial_num in love_list:
-            self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
-            self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-            self.love_button.isChecked = True
+        if self.star.isChecked:
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sen_serial_num]))
+            if sen_serial_num in love_list_copy:
+                self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = True
+            else:
+                self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = False
         else:
-            self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
-            self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-            self.love_button.isChecked = False
+            love_serial_num += 1
+            if love_serial_num >= len(love_list):
+                love_serial_num = 0
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
+            if love_list[love_serial_num] in love_list_copy_copy:
+                self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = True
+            else:
+                self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = False
     
 
     #主界面的设置
@@ -225,6 +288,14 @@ class Ui_MainWindow(QMainWindow):
         self.change_but.setText(_translate("MainWindow", "切换句子"))
         self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[sen_serial_num])))
 
+    def retranslateFavorite(self, MainWindow):
+        global textdic, sen_serial_num, love_list, love_serial_num
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
+        MainWindow.setWindowIcon(QtGui.QIcon('pictures/star.png'))
+        self.change_but.setText(_translate("MainWindow", "收藏夹"))
+        self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]])))
+
 
 if __name__ == "__main__":
     import sys
@@ -234,7 +305,7 @@ if __name__ == "__main__":
     ui.setupUi(MainWindow)
     MainWindow.show()
     app.exec_()
-    love_list.sort()
+    love_list = set(love_list_copy).intersection(set(love_list_copy_copy))
     import_love.write_love_to_file(love_list, 'love.md')
     print('love_list:', love_list)
     sys.exit()
