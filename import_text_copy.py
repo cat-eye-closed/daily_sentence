@@ -10,14 +10,14 @@ def read_file_to_dict(filename):
 
             if line.startswith('##### '):
                 if key is not None:
-                    result[int(key)] = ''.join(value).replace('\n', '<br>').strip()
+                    result[int(key)] = ''.join(value).strip()
                 key = line.strip('#\n')
                 value = []
             else:
                 value.append(line)
 
         if key is not None and value:
-            result[int(key)] = ''.join(value).replace('\n', '<br>').strip()
+            result[int(key)] = ''.join(value).strip()
 
     return result
 

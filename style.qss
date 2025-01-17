@@ -9,11 +9,11 @@ QLabel#date {
 
 QLabel#label {
     color: #1b2d45;
+    background-color: rgb(238, 244, 248);
     font-family: '微软雅黑';
     font-size: 35px;
     font-weight: bold;
     qproperty-alignment: AlignCenter;
-    background-color:rgb(235, 243, 248);
     border: 10px solid #CCCCCC;
     border-radius: 25px;
     padding: 5px;
@@ -37,3 +37,4 @@ QPushButton#change:hover {
     background-color: #1b2d45;
     color: white;
 }
+

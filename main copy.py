@@ -1,6 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QApplication, QPushButton, QGraphicsDropShadowEffect
+from PyQt5.QtCore import Qt, QPoint, QPointF
+from PyQt5.QtGui import QPainter, QColor, QRadialGradient,QFont
 
 import random
 
@@ -35,6 +37,30 @@ class QSSLoader:
     def read_qss_file(qss_file_name):
         with open(qss_file_name, 'r',  encoding='UTF-8') as file:
             return file.read()
+
+class HoverLabel(QLabel):
+    def __init__(self, *args, **kwargs):
+        super(HoverLabel, self).__init__(*args, **kwargs)
+        self.setMouseTracking(True) # Enable mouse tracking
+        self.mousePosition = QPointF(0, 0)
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+    
+    def mouseMoveEvent(self, event):
+        self.mousePosition = QPointF(event.pos().x(), event.pos().y())  # Update mouse position
+        self.update()  # Redraw window
+
+    def paintEvent(self,event):
+        painter = QPainter(self)
+        gradient = QRadialGradient(self.mousePosition, 300)
+        gradient.setColorAt(0, QColor(112, 128, 144, 160))  # 光晕的颜色
+        gradient.setColorAt(1, QColor(235, 243, 248, 0))  # 背景颜色
+        painter.fillRect(self.rect(), gradient)
+
 
 #主界面UI
 class Ui_MainWindow(QMainWindow):
@@ -106,10 +132,17 @@ class Ui_MainWindow(QMainWindow):
 
 
         #文本框设置
-        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label = QLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.08), int(self.width*0.6), int(self.height*0.6)))
         self.label.setObjectName("label")
+        self.label.setStyleSheet("background-color: transparent")
         addShadowEffect1(self.label)
+        self.label.setMouseTracking(True)
+
+        self.hover_label = HoverLabel(self.centralwidget)
+        self.hover_label.setObjectName("hover_label")
+        self.hover_label.setStyleSheet("border-radius: 25px;padding: 5px;margin: 10px;outline: paleturquoise;")
+        self.hover_label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.08), int(self.width*0.6), int(self.height*0.6)))
 
 
         #左下角收藏夹按钮

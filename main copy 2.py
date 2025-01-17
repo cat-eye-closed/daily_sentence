@@ -1,14 +1,16 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QApplication, QPushButton, QGraphicsDropShadowEffect
+from PyQt5.QtCore import Qt, QPoint, QPointF
+from PyQt5.QtGui import QPainter, QColor, QRadialGradient,QFont,QTextDocument
 
 import random
 
-import import_text, import_love, import_date, search
+import import_text_copy, import_love, import_date, search
 
 
 #读取句子文本文件
-textdic = import_text.read_file_to_dict('sentence.md')
+textdic = import_text_copy.read_file_to_dict('sentence.md')
 #句子总数
 SENTENCE_NUM = len(textdic)
 #随机生成句子序号的序列
@@ -35,6 +37,82 @@ class QSSLoader:
     def read_qss_file(qss_file_name):
         with open(qss_file_name, 'r',  encoding='UTF-8') as file:
             return file.read()
+
+class HoverLabel(QLabel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.setMouseTracking(True)  # 启用鼠标跟踪
+        self.x = 0.0
+        self.y = 0.0
+
+        # Set the styles
+        self.setStyleSheet("""
+            color: #1b2d45;
+            font-family: '微软雅黑';
+            font-size: 35px;
+            font-weight: bold;
+            qproperty-alignment: AlignCenter;
+            border: 10px solid #CCCCCC;
+            border-radius: 25px;
+            padding: 5px;
+            margin: 10px;
+            outline: paleturquoise;
+        """)
+        self.setAlignment(Qt.AlignCenter)
+
+    def enterEvent(self, event):
+        super().enterEvent(event)
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+
+    def mouseMoveEvent(self, event):
+        self.x = float(event.x())
+        self.y = float(event.y())
+        self.update()  # 通知QWidget需要重绘
+        super().mouseMoveEvent(event)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        center = QPointF(self.x, self.y)
+        gradient = QRadialGradient(center, 300)
+        gradient.setColorAt(0, QColor(70, 130, 180, 255))  # 光晕的颜色
+        gradient.setColorAt(1, QColor(235, 243, 248, 255))  # 背景颜色
+        painter.fillRect(self.rect(), gradient)
+
+        font = QFont()
+        font.setFamily('微软雅黑')
+        font.setBold(True)
+        font.setPixelSize(35)
+        painter.setFont(font)
+        painter.setPen(QColor(27, 45, 69))  # Set text color
+        painter.drawText(self.rect(), Qt.AlignCenter, self.text())  # Draw text
+
+        painter = QPainter(self)
+
+        # 创建 QTextDocument 作为临时的富文本渲染器
+        doc = QTextDocument()
+
+        # 使用 CSS 设置文本样式
+        css = """
+        p {
+            color: #1b2d45;
+            font-family: '微软雅黑';
+            font-size: 35px;
+            font-weight: bold;
+            text-align: center;
+            border: 10px solid #CCCCCC;
+            border-radius: 25px;
+            padding: 5px;
+            margin: 10px;
+            outline: paleturquoise;
+        }
+        """
+        doc.setDefaultStyleSheet(css)
+        doc.setHtml("<p>Hello<br/>World</p>")
+
+        # 使用 QPainter 绘制 QTextDocument
+        doc.drawContents(painter)
 
 #主界面UI
 class Ui_MainWindow(QMainWindow):
@@ -105,11 +183,18 @@ class Ui_MainWindow(QMainWindow):
         addShadowEffect2(self.change)
 
 
+        self.hover_label = HoverLabel(self.centralwidget)
+        self.hover_label.setObjectName("hover_label")
+        self.hover_label.setStyleSheet("border-radius: 25px;padding: 5px;margin: 10px;outline: paleturquoise;")
+        self.hover_label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.08), int(self.width*0.6), int(self.height*0.6)))
+
         #文本框设置
-        self.label = QtWidgets.QLabel(self.centralwidget)
+        self.label = HoverLabel(self.centralwidget)
         self.label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.08), int(self.width*0.6), int(self.height*0.6)))
         self.label.setObjectName("label")
+        self.label.setStyleSheet("background-color: transparent")
         addShadowEffect1(self.label)
+        self.label.setMouseTracking(True)
 
 
         #左下角收藏夹按钮
@@ -280,7 +365,7 @@ class Ui_MainWindow(QMainWindow):
             sen_serial_num -= 1
             if sen_serial_num < 0:
                 sen_serial_num = len(sentence_sequence) - 1
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sentence_sequence[sen_serial_num]]))
+            self.label.setText('{}'.format(textdic[sentence_sequence[sen_serial_num]]))
             if sentence_sequence[sen_serial_num] in love_list_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
@@ -293,7 +378,7 @@ class Ui_MainWindow(QMainWindow):
             love_serial_num -= 1
             if love_serial_num < 0:
                 love_serial_num = len(love_list) - 1
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
+            self.label.setText('{}'.format(textdic[love_list_copy[love_serial_num]]))
             if love_list[love_serial_num] in love_list_copy_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
@@ -310,7 +395,7 @@ class Ui_MainWindow(QMainWindow):
             sen_serial_num += 1
             if sen_serial_num >= len(sentence_sequence):
                 sen_serial_num = 0
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sentence_sequence[sen_serial_num]]))
+            self.label.setText('{}'.format(textdic[sentence_sequence[sen_serial_num]]))
             if sentence_sequence[sen_serial_num] in love_list_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
@@ -323,7 +408,7 @@ class Ui_MainWindow(QMainWindow):
             love_serial_num += 1
             if love_serial_num >= len(love_list):
                 love_serial_num = 0
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
+            self.label.setText('{}'.format(textdic[love_list_copy[love_serial_num]]))
             if love_list[love_serial_num] in love_list_copy_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
@@ -339,9 +424,9 @@ class Ui_MainWindow(QMainWindow):
         search.search(textdic, '爱', searched_list)
         if searched_list:
             sen_serial_num = searched_list[0] - 1
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[0]]))
+            self.label.setText('{}'.format(textdic[searched_list[0]]))
         else:
-            self.label.setText('<p style="line-height:60px;">未找到</p>')
+            self.label.setText('未找到')
     
 
     #主界面的设置
@@ -351,7 +436,7 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
         MainWindow.setWindowIcon(QtGui.QIcon('pictures/star.png'))
         self.change.setText(_translate("MainWindow", "主界面"))
-        self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[sentence_sequence[sen_serial_num]])))
+        self.label.setText(_translate("MainWindow", '{}'.format(textdic[sentence_sequence[sen_serial_num]])))
 
     def retranslateFavorite(self, MainWindow):
         global textdic, sen_serial_num, love_list, love_serial_num
@@ -359,7 +444,7 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
         MainWindow.setWindowIcon(QtGui.QIcon('pictures/star2.png'))
         self.change.setText(_translate("MainWindow", "收藏夹"))
-        self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]])))
+        self.label.setText(_translate("MainWindow", '{}'.format(textdic[love_list_copy[love_serial_num]])))
 
 
 if __name__ == "__main__":
