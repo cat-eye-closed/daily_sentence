@@ -1,0 +1,39 @@
+QLabel#date {
+    color: #203652;
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 100px;
+    font-weight: bold;
+    qproperty-alignment: AlignCenter;
+}
+
+
+QLabel#label {
+    color: #1b2d45;
+    font-family: '微软雅黑';
+    font-size: 35px;
+    font-weight: bold;
+    qproperty-alignment: AlignCenter;
+    background-color:rgb(235, 243, 248);
+    border: 10px solid #CCCCCC;
+    border-radius: 25px;
+    padding: 5px;
+    margin: 10px;
+    outline: paleturquoise;
+}
+
+QPushButton#change {
+    color: #1b2d45;
+    font-family: '微软雅黑';
+    font-size: 35px;
+    font-weight: bold;
+    background-color:rgb(238, 244, 248);
+    border-radius: 15px;
+    padding: 5px;
+    margin: 10px;
+    outline: paleturquoise;
+}
+
+QPushButton#change:hover {
+    background-color: #1b2d45;
+    color: white;
+}

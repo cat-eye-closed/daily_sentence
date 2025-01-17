@@ -5,13 +5,18 @@ from PyQt5.QtGui import QFont
 
 import random
 
-import import_text, import_love
+import import_text, import_love, import_date, search
 
 
 #读取句子文本文件
 textdic = import_text.read_file_to_dict('sentence.md')
+#句子总数
 SENTENCE_NUM = len(textdic)
-sen_serial_num = random.randint(1, SENTENCE_NUM)
+#随机生成句子序号的序列
+sentence_sequence = list(range(1, SENTENCE_NUM+1))
+random.shuffle(sentence_sequence)
+#句子序号序列的下标
+sen_serial_num = 0
 #读取收藏序列
 love_list = import_love.read_love_from_file('love.md')
 #love_list用于主界面遍历，通过love_list_copy进行操作
@@ -19,8 +24,19 @@ love_list_copy = love_list.copy()
 #love_list_copy用于收藏夹界面的遍历，通过love_list_copy_copy进行操作
 love_list_copy_copy = love_list.copy()
 love_serial_num = 0
+#找到的句子序号序列
+searched_list = []
 
+class QSSLoader:
+    def __init__(self):
+        pass
 
+    @staticmethod
+    def read_qss_file(qss_file_name):
+        with open(qss_file_name, 'r',  encoding='UTF-8') as file:
+            return file.read()
+
+#主界面UI
 class Ui_MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -51,7 +67,6 @@ class Ui_MainWindow(QMainWindow):
         MainWindow.resize(self.width, self.height)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
-        self.centralwidget.setStyleSheet('background-color: #FFFFFF;')
 
         #阴影效果
         def addShadowEffect1(widget):
@@ -74,40 +89,26 @@ class Ui_MainWindow(QMainWindow):
             widget.setGraphicsEffect(shadowEffect)
 
 
-        #字体设置
-        font1 = QFont()
-        font1.setFamily('微软雅黑')
-        font1.setBold(True)
-        font1.setPixelSize(int(self.width*0.018))
-
-
         #左上角日期设置
         self.date = QtWidgets.QLabel(self.centralwidget)
         self.date.setGeometry(QtCore.QRect(int(self.width*0.08), int(self.height*0.08), int(self.width*0.18), int(self.width*0.18)))
-        self.date.setText("Date")
+        self.date.setText('<p>{}</p></br><p>{}</p>'.format(import_date.month, import_date.day))
         self.date.setObjectName("date")
         self.date.setAlignment(QtCore.Qt.AlignCenter)
-        self.date.setStyleSheet('border: 3px solid #000000;')
 
 
         #左侧中间change按钮
-        self.change_but = QtWidgets.QPushButton(self.centralwidget)
-        self.change_but.setGeometry(QtCore.QRect(int(self.width*0.1), int(self.height*0.43), int(self.width*0.14), int(self.height*0.13)))
-        self.change_but.setFont(font1)
-        self.change_but.setObjectName("change_but")
-        self.change_but.clicked.connect(self.change_sequence)
-        addShadowEffect2(self.change_but)
+        self.change = QtWidgets.QPushButton(self.centralwidget)
+        self.change.setGeometry(QtCore.QRect(int(self.width*0.1), int(self.height*0.4), int(self.width*0.14), int(self.height*0.13)))
+        self.change.setObjectName("change")
+        self.change.clicked.connect(self.search)
+        addShadowEffect2(self.change)
 
 
         #文本框设置
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(int(self.width/3), int(self.height/12), int(self.width/1.7), int(self.height/1.7)))
-        self.label.setCursor(QtGui.QCursor(QtCore.Qt.OpenHandCursor))
-
-        self.label.setFont(font1)
-        self.label.setAlignment(QtCore.Qt.AlignCenter)
+        self.label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.08), int(self.width*0.6), int(self.height*0.6)))
         self.label.setObjectName("label")
-        self.label.setStyleSheet('background-color:rgb(235, 243, 248); border: 10px solid #CCCCCC;border-radius: 15px;padding: 5px;margin: 10px;')
         addShadowEffect1(self.label)
 
 
@@ -136,16 +137,16 @@ class Ui_MainWindow(QMainWindow):
         addShadowEffect2(self.star)
 
 
-        #右侧下方收藏按钮
+        #右侧下方中间收藏按钮
         self.love_button = QtWidgets.QPushButton(self.centralwidget)
-        self.love_button.setGeometry(QtCore.QRect(int(self.width*0.4), int(self.height*0.73), int(self.width*0.09), int(self.width*0.09)))
+        self.love_button.setGeometry(QtCore.QRect(int(self.width*0.585), int(self.height*0.73), int(self.width*0.09), int(self.width*0.09)))
         self.love_button.setText("")
         loved_button = QtGui.QIcon()
-        loved_button.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        loved_button.addPixmap(QtGui.QPixmap("pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         unloved_button = QtGui.QIcon()
-        unloved_button.addPixmap(QtGui.QPixmap("d:\\cat_eye\\daily_sentence\\pictures/unloved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        unloved_button.addPixmap(QtGui.QPixmap("pictures/unloved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         
-        if sen_serial_num in love_list_copy:
+        if sentence_sequence[sen_serial_num] in love_list_copy:
             self.love_button.setIcon(loved_button)
             self.love_button.isChecked = True
         else:
@@ -158,6 +159,30 @@ class Ui_MainWindow(QMainWindow):
         self.love_button.setCheckable(True)
         self.love_button.setAutoExclusive(True)
         self.love_button.clicked.connect(self.clickLove)
+
+        #右侧下方左边last按钮
+        self.last_button = QtWidgets.QPushButton(self.centralwidget)
+        self.last_button.setGeometry(QtCore.QRect(int(self.width*0.37), int(self.height*0.73), int(self.width*0.09), int(self.width*0.09)))
+        last = QtGui.QIcon()
+        last.addPixmap(QtGui.QPixmap("pictures/last.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.last_button.setIcon(last)
+        self.last_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+        self.last_button.setObjectName("last_button")
+        self.last_button.setStyleSheet('border: 2px solid #CCCCCC;border-radius: 80px;padding: 5px;margin: 10px;')
+        self.last_button.clicked.connect(self.last_sequence)
+        addShadowEffect3(self.last_button)
+
+        #右侧下方右边next按钮
+        self.next_button = QtWidgets.QPushButton(self.centralwidget)
+        self.next_button.setGeometry(QtCore.QRect(int(self.width*0.8), int(self.height*0.73), int(self.width*0.09), int(self.width*0.09)))
+        next = QtGui.QIcon()
+        next.addPixmap(QtGui.QPixmap("pictures/next.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.next_button.setIcon(next)
+        self.next_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+        self.next_button.setObjectName("next_button")
+        self.next_button.setStyleSheet('border: 2px solid #CCCCCC;border-radius: 80px;padding: 5px;margin: 10px;')
+        self.next_button.clicked.connect(self.next_sequence)
+        addShadowEffect3(self.next_button)
 
 
         MainWindow.setCentralWidget(self.centralwidget)
@@ -175,7 +200,7 @@ class Ui_MainWindow(QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
 
-    #星星收藏夹按钮的变化
+    #星星收藏夹按钮对应切换主页面和收藏夹页面
     def clickStar(self):
         def addShadowEffect3(widget):
             shadowEffect = QGraphicsDropShadowEffect()
@@ -184,7 +209,7 @@ class Ui_MainWindow(QMainWindow):
             shadowEffect.setOffset(10, 10)  # 设置阴影偏移量
             widget.setGraphicsEffect(shadowEffect)
 
-        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy, sentence_sequence
         self.star.isChecked = not self.star.isChecked
         star1 = QtGui.QIcon()
         star1.addPixmap(QtGui.QPixmap("pictures/star.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -196,9 +221,7 @@ class Ui_MainWindow(QMainWindow):
             self.retranslateUi(MainWindow)
             love_list_copy = love_list_copy_copy.copy()
             love_list = love_list_copy_copy.copy()
-            print(sen_serial_num)
-            print(love_list_copy)
-            if sen_serial_num in love_list_copy:
+            if sentence_sequence[sen_serial_num] in love_list_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = True
@@ -225,7 +248,7 @@ class Ui_MainWindow(QMainWindow):
 
     #收藏按钮的变化并修改收藏序列
     def clickLove(self):
-        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy, sentence_sequence
         self.love_button.isChecked = not self.love_button.isChecked
         loved_botton = QtGui.QIcon()
         loved_botton.addPixmap(QtGui.QPixmap("pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
@@ -235,11 +258,11 @@ class Ui_MainWindow(QMainWindow):
             if self.love_button.isChecked:
                 self.love_button.setIcon(loved_botton)
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-                love_list_copy.append(sen_serial_num)
+                love_list_copy.append(sentence_sequence[sen_serial_num])
             else:
                 self.love_button.setIcon(unloved_button)
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-                love_list_copy.remove(sen_serial_num)
+                love_list_copy.remove(sentence_sequence[sen_serial_num])
         else:
             if self.love_button.isChecked:
                 self.love_button.setIcon(loved_botton)
@@ -249,14 +272,46 @@ class Ui_MainWindow(QMainWindow):
                 self.love_button.setIcon(unloved_button)
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 love_list_copy_copy.remove(love_list_copy[love_serial_num])
-
-    #change按钮按下后随机
-    def change_sequence(self):
+    
+    #last按钮按下后显示上一句
+    def last_sequence(self):
         global sen_serial_num, love_list, love_serial_num, love_list_copy
-        sen_serial_num = random.randint(1, SENTENCE_NUM)
         if self.star.isChecked:
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sen_serial_num]))
-            if sen_serial_num in love_list_copy:
+            sen_serial_num -= 1
+            if sen_serial_num < 0:
+                sen_serial_num = len(sentence_sequence) - 1
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sentence_sequence[sen_serial_num]]))
+            if sentence_sequence[sen_serial_num] in love_list_copy:
+                self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = True
+            else:
+                self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = False
+        else:
+            love_serial_num -= 1
+            if love_serial_num < 0:
+                love_serial_num = len(love_list) - 1
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
+            if love_list[love_serial_num] in love_list_copy_copy:
+                self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = True
+            else:
+                self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                self.love_button.isChecked = False
+
+    #next按钮按下后显示下一句
+    def next_sequence(self):
+        global sen_serial_num, love_list, love_serial_num, love_list_copy
+        if self.star.isChecked:
+            sen_serial_num += 1
+            if sen_serial_num >= len(sentence_sequence):
+                sen_serial_num = 0
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[sentence_sequence[sen_serial_num]]))
+            if sentence_sequence[sen_serial_num] in love_list_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = True
@@ -277,24 +332,34 @@ class Ui_MainWindow(QMainWindow):
                 self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = False
+
+    #搜索函数
+    def search(self):
+        global searched_list, sen_serial_num
+        search.search(textdic, '爱', searched_list)
+        if searched_list:
+            sen_serial_num = searched_list[0] - 1
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[0]]))
+        else:
+            self.label.setText('<p style="line-height:60px;">未找到</p>')
     
 
     #主界面的设置
     def retranslateUi(self, MainWindow):
-        global textdic, sen_serial_num
+        global textdic, sen_serial_num,sentence_sequence
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
-        MainWindow.setWindowIcon(QtGui.QIcon('pictures/star2.png'))
-        self.change_but.setText(_translate("MainWindow", "切换句子"))
-        self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[sen_serial_num])))
+        MainWindow.setWindowIcon(QtGui.QIcon('pictures/star.png'))
+        self.change.setText(_translate("MainWindow", "主界面"))
+        self.label.setText(_translate("MainWindow", '<p>{}</p>'.format(textdic[sentence_sequence[sen_serial_num]])))
 
     def retranslateFavorite(self, MainWindow):
         global textdic, sen_serial_num, love_list, love_serial_num
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
-        MainWindow.setWindowIcon(QtGui.QIcon('pictures/star.png'))
-        self.change_but.setText(_translate("MainWindow", "收藏夹"))
-        self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]])))
+        MainWindow.setWindowIcon(QtGui.QIcon('pictures/star2.png'))
+        self.change.setText(_translate("MainWindow", "收藏夹"))
+        self.label.setText(_translate("MainWindow", '<p>{}</p>'.format(textdic[love_list_copy[love_serial_num]])))
 
 
 if __name__ == "__main__":
@@ -303,6 +368,9 @@ if __name__ == "__main__":
     MainWindow = QtWidgets.QMainWindow()
     ui = Ui_MainWindow()
     ui.setupUi(MainWindow)
+    style_file = './style.qss'
+    style_sheet = QSSLoader.read_qss_file(style_file)
+    MainWindow.setStyleSheet(style_sheet)
     MainWindow.show()
     app.exec_()
     love_list = set(love_list_copy).intersection(set(love_list_copy_copy))
