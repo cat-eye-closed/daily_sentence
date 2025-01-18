@@ -21,20 +21,58 @@ QLabel#label {
     outline: paleturquoise;
 }
 
-QPushButton#change {
+QLineEdit#search {
     color: #1b2d45;
     font-family: '微软雅黑';
     font-size: 35px;
     font-weight: bold;
-    background-color:rgb(238, 244, 248);
+    background-color:rgb(244, 244, 248);
     border-radius: 15px;
     padding: 5px;
     margin: 10px;
     outline: paleturquoise;
 }
 
-QPushButton#change:hover {
+QLineEditPushButton#search:hover {
     background-color: #1b2d45;
     color: white;
 }
 
+QPushButton#confirm {
+    color: #1b2d45;
+    font-family: '微软雅黑';
+    font-size: 35px;
+    font-weight: bold;
+    background-color:rgb(244, 244, 248);
+    border-color: #1b2d45;
+    border-radius: 30px;
+    padding: 5px;
+    margin: 10px;
+    outline: paleturquoise;
+}
+
+QPushButton#confirm:hover {
+    background-color: #1b2d45;
+    color: white;
+}
+
+HoverLabel#hover_label {
+    border-radius: 15px;
+    background-color: transparent;
+    padding: 5px;
+    margin: 10px;
+    outline: transparent;
+}
+
+QLineEdit{
+    color: #1b2d45;
+    font-family: '微软雅黑';
+    qproperty-alignment: AlignCenter;
+    font-size: 35px;
+    font-weight: bold;
+    background-color:rgb(244, 244, 248);
+    border-radius: 15px;
+    padding: 5px;
+    margin: 10px;
+    outline: paleturquoise;
+}

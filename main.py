@@ -1,8 +1,10 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QApplication, QPushButton, QGraphicsDropShadowEffect
+from PyQt5.QtCore import Qt, QPoint, QPointF, QPropertyAnimation, pyqtProperty
+from PyQt5.QtGui import QPainter, QColor, QRadialGradient,QFont
 
-import random
+import random, time, math
 
 import import_text, import_love, import_date, search
 
@@ -25,6 +27,11 @@ love_list_copy_copy = love_list.copy()
 love_serial_num = 0
 #找到的句子序号序列
 searched_list = []
+search_serial_num = 0
+#悬停光晕半径
+hover_radius = random.randint(250, 500)
+#判定是否搜索
+is_searched = False
 
 
 class QSSLoader:
@@ -35,6 +42,56 @@ class QSSLoader:
     def read_qss_file(qss_file_name):
         with open(qss_file_name, 'r',  encoding='UTF-8') as file:
             return file.read()
+        
+def get_color():
+    t = time.time()  # Get current time
+
+    # Compute color components
+    hue = int(t * 10) % 360
+    saturation = 100 + int(math.sin(t) * 50)  # Range between 200 and 250
+    value = 200 + int(math.sin(t) * 50)  # Range between 200 and 250
+
+    return QColor.fromHsv(hue, saturation, value)
+
+#设置检测鼠标悬停的label子类
+class HoverLabel(QLabel):
+    def __init__(self, *args, **kwargs):
+        super(HoverLabel, self).__init__(*args, **kwargs)
+        self.setMouseTracking(True) # Enable mouse tracking
+        self.mousePosition = QPointF(0, 0)
+        self.animation = QPropertyAnimation(self, b'mousePosition', self)
+        self.animation.setDuration(1000)  # Animation duration in milliseconds        
+
+    def enterEvent(self, event):
+        global hover_radius
+        super().enterEvent(event)
+        hover_radius = random.randint(200, 500)
+
+    def leaveEvent(self, event):
+        super().leaveEvent(event)
+
+    @pyqtProperty(QPointF)
+    def mousePosition(self):
+        return self._mousePosition
+
+    @mousePosition.setter
+    def mousePosition(self, value):
+        self._mousePosition = value
+        self.update()
+    
+    def mouseMoveEvent(self, event):
+        endValue = QPointF(event.pos().x(), event.pos().y())
+        self.animation.setStartValue(self.mousePosition)
+        self.animation.setEndValue(endValue)
+        self.animation.start()
+
+    def paintEvent(self,event):
+        painter = QPainter(self)
+        gradient = QRadialGradient(self.mousePosition, hover_radius)
+        gradient.setColorAt(0, get_color())  # 光晕的颜色
+        gradient.setColorAt(1, QColor(235, 243, 248, 0))  # 背景颜色
+        painter.fillRect(self.rect(), gradient)
+
 
 #主界面UI
 class Ui_MainWindow(QMainWindow):
@@ -97,19 +154,34 @@ class Ui_MainWindow(QMainWindow):
         self.date.setAlignment(QtCore.Qt.AlignCenter)
 
 
-        #左侧中间change按钮
-        self.change = QtWidgets.QPushButton(self.centralwidget)
-        self.change.setGeometry(QtCore.QRect(int(self.width*0.1), int(self.height*0.4), int(self.width*0.14), int(self.height*0.13)))
-        self.change.setObjectName("change")
-        self.change.clicked.connect(self.search)
-        addShadowEffect2(self.change)
+        #左侧中间搜索按钮
+        global search_str
+        self.search_box = QtWidgets.QLineEdit(self.centralwidget)
+        self.search_box.setGeometry(QtCore.QRect(int(self.width*0.07), int(self.height*0.4), int(self.width*0.14), int(self.height*0.13)))
+        self.search_box.setObjectName("search")
+        self.search_box.returnPressed.connect(self.search)
+        search_str = self.search_box.text()
+        addShadowEffect2(self.search_box)
 
+        #左侧中间搜索确认按钮
+        self.search_confirm_button = QtWidgets.QPushButton(self.centralwidget)
+        self.search_confirm_button.setGeometry(QtCore.QRect(int(self.width*0.22), int(self.height*0.415), int(self.height*0.1), int(self.height*0.1)))
+        self.search_confirm_button.setObjectName("confirm")
+        self.search_confirm_button.clicked.connect(self.search_confirm)
+        addShadowEffect2(self.search_confirm_button)
 
         #文本框设置
-        self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.08), int(self.width*0.6), int(self.height*0.6)))
+        self.label = QLabel(self.centralwidget)
+        self.label.setGeometry(QtCore.QRect(int(self.width*0.33), int(self.height*0.07), int(self.width*0.6), int(self.height*0.61)))
         self.label.setObjectName("label")
+        self.label.setStyleSheet("background-color: transparent")
         addShadowEffect1(self.label)
+        self.label.setMouseTracking(True)
+
+        #文本框的悬停效果
+        self.hover_label = HoverLabel(self.centralwidget)
+        self.hover_label.setObjectName("hover_label")
+        self.hover_label.setGeometry(QtCore.QRect(int(self.width*0.335), int(self.height*0.075), int(self.width*0.59), int(self.height*0.60)))
 
 
         #左下角收藏夹按钮
@@ -158,7 +230,11 @@ class Ui_MainWindow(QMainWindow):
         self.love_button.setStyleSheet('border: 2px solid #CCCCCC;border-radius: 80px;padding: 5px;margin: 10px;') 
         self.love_button.setCheckable(True)
         self.love_button.setAutoExclusive(True)
-        self.love_button.clicked.connect(self.clickLove)
+        if is_searched and searched_list == []:
+            self.love_button.setIcon(unloved_button)
+            self.love_button.isChecked = False            
+        else:
+            self.love_button.clicked.connect(self.clickLove)
 
         #右侧下方左边last按钮
         self.last_button = QtWidgets.QPushButton(self.centralwidget)
@@ -209,8 +285,9 @@ class Ui_MainWindow(QMainWindow):
             shadowEffect.setOffset(10, 10)  # 设置阴影偏移量
             widget.setGraphicsEffect(shadowEffect)
 
-        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy, sentence_sequence
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy, sentence_sequence, is_searched, searched_list, search_serial_num
         self.star.isChecked = not self.star.isChecked
+        is_searched = False
         star1 = QtGui.QIcon()
         star1.addPixmap(QtGui.QPixmap("pictures/star.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         star2 = QtGui.QIcon()
@@ -232,7 +309,10 @@ class Ui_MainWindow(QMainWindow):
         else:
             self.star.setIcon(star2)
             self.star.setIconSize(QtCore.QSize(int(self.width*0.18), int(self.width*0.18)))
-            self.retranslateFavorite(MainWindow)
+            if love_list_copy:
+                self.retranslateFavorite(MainWindow)
+            else:
+                self.label.setText('<p style="line-height:60px;">还没有收藏的句子呢，</br>去逛逛吧</p>')
             love_list_copy_copy = love_list_copy.copy()
             love_list = love_list_copy.copy()
             love_serial_num = 0
@@ -254,7 +334,22 @@ class Ui_MainWindow(QMainWindow):
         loved_botton.addPixmap(QtGui.QPixmap("pictures/loved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         unloved_button = QtGui.QIcon()
         unloved_button.addPixmap(QtGui.QPixmap("pictures/unloved.png"), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        if self.star.isChecked:
+        if is_searched:
+            if searched_list:
+                if self.love_button.isChecked:
+                    if searched_list[search_serial_num] not in love_list_copy_copy:
+                        self.love_button.setIcon(loved_botton)
+                        self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                        love_list_copy_copy.append(searched_list[search_serial_num])
+                        love_list_copy.append(searched_list[search_serial_num])
+                else:
+                    if searched_list[search_serial_num] in love_list_copy_copy:
+                        self.love_button.setIcon(unloved_button)
+                        self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                        love_list_copy_copy.remove(searched_list[search_serial_num])
+                        love_list_copy.remove(searched_list[search_serial_num])
+
+        elif self.star.isChecked:
             if self.love_button.isChecked:
                 self.love_button.setIcon(loved_botton)
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
@@ -264,19 +359,34 @@ class Ui_MainWindow(QMainWindow):
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 love_list_copy.remove(sentence_sequence[sen_serial_num])
         else:
-            if self.love_button.isChecked:
-                self.love_button.setIcon(loved_botton)
-                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-                love_list_copy_copy.append(love_list_copy[love_serial_num])
-            else:
-                self.love_button.setIcon(unloved_button)
-                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-                love_list_copy_copy.remove(love_list_copy[love_serial_num])
+            if love_list_copy:
+                if self.love_button.isChecked:
+                    self.love_button.setIcon(loved_botton)
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    love_list_copy_copy.append(love_list_copy[love_serial_num])
+                else:
+                    self.love_button.setIcon(unloved_button)
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    love_list_copy_copy.remove(love_list_copy[love_serial_num])
     
     #last按钮按下后显示上一句
     def last_sequence(self):
-        global sen_serial_num, love_list, love_serial_num, love_list_copy
-        if self.star.isChecked:
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy, sentence_sequence, search_serial_num
+        if is_searched:
+            if searched_list:
+                search_serial_num -= 1
+                if search_serial_num < 0:
+                    search_serial_num = len(searched_list) - 1
+                self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[search_serial_num]]))
+                if searched_list[search_serial_num] in love_list_copy_copy:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = True
+                else:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = False
+        elif self.star.isChecked:
             sen_serial_num -= 1
             if sen_serial_num < 0:
                 sen_serial_num = len(sentence_sequence) - 1
@@ -290,23 +400,39 @@ class Ui_MainWindow(QMainWindow):
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = False
         else:
-            love_serial_num -= 1
-            if love_serial_num < 0:
-                love_serial_num = len(love_list) - 1
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
-            if love_list[love_serial_num] in love_list_copy_copy:
-                self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
-                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-                self.love_button.isChecked = True
-            else:
-                self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
-                self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
-                self.love_button.isChecked = False
+            if love_list_copy:
+                love_serial_num -= 1
+                if love_serial_num < 0:
+                    love_serial_num = len(love_list) - 1
+                self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
+                if love_list[love_serial_num] in love_list_copy_copy:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = True
+                else:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = False
 
     #next按钮按下后显示下一句
     def next_sequence(self):
-        global sen_serial_num, love_list, love_serial_num, love_list_copy
-        if self.star.isChecked:
+        global sen_serial_num, love_list, love_serial_num, love_list_copy, love_list_copy_copy, sentence_sequence, search_serial_num
+        if is_searched:
+            if searched_list:
+                search_serial_num += 1
+                if search_serial_num >= len(searched_list):
+                    search_serial_num = 0
+                self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[search_serial_num]]))
+                if searched_list[search_serial_num] in love_list_copy_copy:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = True
+                else:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = False
+
+        elif self.star.isChecked:
             sen_serial_num += 1
             if sen_serial_num >= len(sentence_sequence):
                 sen_serial_num = 0
@@ -320,11 +446,32 @@ class Ui_MainWindow(QMainWindow):
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = False
         else:
-            love_serial_num += 1
-            if love_serial_num >= len(love_list):
-                love_serial_num = 0
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
-            if love_list[love_serial_num] in love_list_copy_copy:
+            if love_list_copy:
+                love_serial_num += 1
+                if love_serial_num >= len(love_list):
+                    love_serial_num = 0
+                self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]]))
+                if love_list[love_serial_num] in love_list_copy_copy:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = True
+                else:
+                    self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
+                    self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
+                    self.love_button.isChecked = False
+
+    #搜索框槽函数
+    def search(self):
+        global searched_list, sen_serial_num, search_str, is_searched, sentence_sequence,search_serial_num
+        search_serial_num = 0
+        is_searched = True
+        search_str = self.search_box.text()
+        print('search_str:', search_str)
+        searched_list = search.search(textdic, search_str, searched_list)
+        print('searched_list:', searched_list)
+        if searched_list:
+            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[0]]))
+            if searched_list[search_serial_num] in love_list_copy_copy:
                 self.love_button.setIcon(QtGui.QIcon("pictures/loved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = True
@@ -332,16 +479,13 @@ class Ui_MainWindow(QMainWindow):
                 self.love_button.setIcon(QtGui.QIcon("pictures/unloved.png"))
                 self.love_button.setIconSize(QtCore.QSize(int(self.width*0.085), int(self.width*0.085)))
                 self.love_button.isChecked = False
-
-    #搜索函数
-    def search(self):
-        global searched_list, sen_serial_num
-        search.search(textdic, '爱', searched_list)
-        if searched_list:
-            sen_serial_num = searched_list[0] - 1
-            self.label.setText('<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[0]]))
         else:
             self.label.setText('<p style="line-height:60px;">未找到</p>')
+
+
+    #搜索确认按钮槽函数
+    def search_confirm(self):
+        self.search()
     
 
     #主界面的设置
@@ -350,7 +494,7 @@ class Ui_MainWindow(QMainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
         MainWindow.setWindowIcon(QtGui.QIcon('pictures/star.png'))
-        self.change.setText(_translate("MainWindow", "主界面"))
+        self.search_confirm_button.setText(_translate("MainWindow", "✓"))
         self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[sentence_sequence[sen_serial_num]])))
 
     def retranslateFavorite(self, MainWindow):
@@ -358,9 +502,19 @@ class Ui_MainWindow(QMainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
         MainWindow.setWindowIcon(QtGui.QIcon('pictures/star2.png'))
-        self.change.setText(_translate("MainWindow", "收藏夹"))
+        self.search_confirm_button.setText(_translate("MainWindow", "✓"))
         self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[love_list_copy[love_serial_num]])))
 
+    def retranslateSearch(self, MainWindow):
+        global textdic, sen_serial_num, searched_list
+        _translate = QtCore.QCoreApplication.translate
+        MainWindow.setWindowTitle(_translate("MainWindow", "Daily Sentence"))
+        MainWindow.setWindowIcon(QtGui.QIcon('pictures/star2.png'))
+        self.search_confirm_button.setText(_translate("MainWindow", "✓"))
+        if searched_list:
+            self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">{}</p>'.format(textdic[searched_list[0]])))
+        else:
+            self.label.setText(_translate("MainWindow", '<p style="line-height:60px;">未找到</p>'))
 
 if __name__ == "__main__":
     import sys
