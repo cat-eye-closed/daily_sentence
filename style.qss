@@ -25,11 +25,13 @@ QLineEdit#search {
     color: #1b2d45;
     font-family: '微软雅黑';
     font-size: 35px;
-    font-weight: bold;
-    background-color:rgb(244, 244, 248);
-    border-radius: 15px;
     padding: 5px;
     margin: 10px;
+    font-weight: bold;
+    background: url("resources/pictures/search.png") no-repeat scroll;
+    background-position:left center;
+    background-color: rgb(240, 240, 240);
+    border-radius: 30px;
     outline: paleturquoise;
 }
 
@@ -43,9 +45,9 @@ QPushButton#confirm {
     font-family: '微软雅黑';
     font-size: 35px;
     font-weight: bold;
-    background-color:rgb(244, 244, 248);
+    background-color:rgb(240, 240, 240);
     border-color: #1b2d45;
-    border-radius: 30px;
+    border-radius: 40px;
     padding: 5px;
     margin: 10px;
     outline: paleturquoise;
@@ -53,7 +55,7 @@ QPushButton#confirm {
 
 QPushButton#confirm:hover {
     background-color: #1b2d45;
-    color: white;
+    color: rgb(232, 232, 232);
 }
 
 HoverLabel#hover_label {
@@ -72,6 +74,20 @@ QLineEdit{
     font-weight: bold;
     background-color:rgb(244, 244, 248);
     border-radius: 15px;
+    padding: 5px;
+    margin: 10px;
+    outline: paleturquoise;
+}
+
+QLabel#music_name {
+    color: #1b2d45;
+    background-color: rgb(238, 244, 248);
+    font-family: '微软雅黑';
+    font-size: 25px;
+    font-weight: bold;
+    qproperty-alignment: AlignCenter;
+    border: 5px solid #CCCCCC;
+    border-radius: 40px;
     padding: 5px;
     margin: 10px;
     outline: paleturquoise;

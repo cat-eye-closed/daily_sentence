@@ -20,11 +20,3 @@ def read_file_to_dict(filename):
             result[int(key)] = ''.join(value).replace('\n', '<br>').strip()
 
     return result
-
-'''
-dict = read_file_to_dict('sentence.md')
-list1 = dict.keys()
-SENTENCE_NUM = len(dict)
-list2 = list(range(1, SENTENCE_NUM+1))
-print(list(set(list2) - set(list1)))
-'''

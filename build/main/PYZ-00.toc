@@ -196,7 +196,6 @@
    'C:\\Program '
    'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_3.12.2288.0_x64__qbz5n2kfra8p0\\Lib\\hashlib.py',
    'PYMODULE'),
-  ('hover_color', 'D:\\cat_eye\\daily_sentence\\hover_color.py', 'PYMODULE'),
   ('import_date', 'D:\\cat_eye\\daily_sentence\\import_date.py', 'PYMODULE'),
   ('import_love', 'D:\\cat_eye\\daily_sentence\\import_love.py', 'PYMODULE'),
   ('import_text', 'D:\\cat_eye\\daily_sentence\\import_text.py', 'PYMODULE'),
